@@ -3,7 +3,7 @@
 //  calc
 //
 //  Created by Raksha Nair on 28/03/24.
-//  
+//  Copyright © 2018 UTS. All rights reserved.
 //
 
 import Foundation

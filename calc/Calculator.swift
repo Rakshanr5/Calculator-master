@@ -3,7 +3,7 @@
 //  calc
 //
 //  Created by Raksha Nair on 28/03/24.
-//  
+//  Copyright © 2020 UTS. All rights reserved.
 //
 
 import Foundation
@@ -72,79 +72,83 @@ class Calculator {
     }
 
     func calculate(_ expression: String) throws -> String {
-        // Check for invalid characters
-        let allowedCharacters = CharacterSet(charactersIn: "0123456789+-*/%x~ ")
-        guard expression.rangeOfCharacter(from: allowedCharacters.inverted) == nil else {
-            throw CalculatorError.invalidCharacter
-        }
+        // Convert the expression string into an array of characters
+        let expressionArray = expression.split(separator: " ").map { String($0) }
 
-        // Initialize stacks for numbers and operators
-        var numberStack = [Int]()
-        var operatorStack = [Character]()
+        do {
+            // Initialize stacks for numbers and operators
+            var numberStack = [Int]()
+            var operatorStack = [Character]()
 
-        // Split the expression by spaces
-        let components = expression.split(separator: " ")
-
-        // Check if the expression starts with a number
-        guard let firstComponent = components.first, let _ = Int(firstComponent) else {
-            throw CalculatorError.invalidExpression
-        }
-
-        // Iterate through components of the expression
-        for component in components {
-            if let number = Int(component) {
-                // If the component is a number, append it to the number stack
-                numberStack.append(number)
-            } else {
-                // If the component is an operator, process it
-                guard component.count == 1 else {
-                    throw CalculatorError.invalidCharacter
-                }
-                let char = component.first!
-                switch char {
-                case "+", "-", "*", "/", "%", "x":
-                    // Check if the previous component was also an operator
-                    if let lastOp = operatorStack.last,
-                       let lastOpPrecedence = precedence[lastOp],
-                       let currentOpPrecedence = precedence[char],
-                       lastOpPrecedence >= currentOpPrecedence {
-                        let b = numberStack.removeLast()
-                        let a = numberStack.removeLast()
-                        let result = try performOperation(a, b, lastOp)
-                        numberStack.append(result)
-                        operatorStack.removeLast()
+            // Iterate through components of the expression
+            for (index, component) in expressionArray.enumerated() {
+                if index % 2 == 0 { // Even indices should contain numbers
+                    guard let number = Int(component) else {
+                        print("Error: Invalid input")
+                        exit(EXIT_FAILURE)
                     }
-                    operatorStack.append(char)
-                case "~":
-                    operatorStack.append(char)
-                default:
-                    throw CalculatorError.invalidCharacter
+                    // If the component is a number, append it to the number stack
+                    numberStack.append(number)
+                } else { // Odd indices should contain operators
+                    guard let char = component.first, component.count == 1 else {
+                        throw CalculatorError.invalidCharacter
+                    }
+                    switch char {
+                    case "+", "-", "*", "/", "%", "x":
+                        // Check if the previous component was also an operator
+                        if let lastOp = operatorStack.last,
+                           let lastOpPrecedence = precedence[lastOp],
+                           let currentOpPrecedence = precedence[char],
+                           lastOpPrecedence >= currentOpPrecedence {
+                            let b = numberStack.removeLast()
+                            let a = numberStack.removeLast()
+                            let result = try performOperation(a, b, lastOp)
+                            numberStack.append(result)
+                            operatorStack.removeLast()
+                        }
+                        operatorStack.append(char)
+                    case "~":
+                        operatorStack.append(char)
+                    default:
+                        throw CalculatorError.invalidCharacter
+                    }
                 }
             }
-        }
 
-        // Perform remaining operations
-        while let op = operatorStack.last {
-            if op == "~" {
-                let a = numberStack.removeLast()
-                let result = try performUnaryOperation(a, op)
-                numberStack.append(result)
-            } else {
-                let b = numberStack.removeLast()
-                let a = numberStack.removeLast()
-                let result = try performOperation(a, b, op)
-                numberStack.append(result)
+            // Perform remaining operations
+            while let op = operatorStack.last {
+                if op == "~" {
+                    let a = numberStack.removeLast()
+                    let result = try performUnaryOperation(a, op)
+                    numberStack.append(result)
+                } else {
+                    let b = numberStack.removeLast()
+                    let a = numberStack.removeLast()
+                    let result = try performOperation(a, b, op)
+                    numberStack.append(result)
+                }
+                operatorStack.removeLast()
             }
-            operatorStack.removeLast()
-        }
 
-        // Return the result
-        guard let result = numberStack.first else {
-            throw CalculatorError.invalidExpression
+            // Return the result
+            guard let result = numberStack.first else {
+                throw CalculatorError.invalidExpression
+            }
+            return String(result)
+        } catch {
+            // Log the error and exit with a non-zero status
+            print("Error: \(error)")
+            exit(EXIT_FAILURE)
         }
-        return String(result)
     }
 }
+
+
+
+
+
+
+
 
 
 
